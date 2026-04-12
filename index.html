@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PA Traffic Log Analyzer</title>
+  <!-- SheetJS for Excel parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -19,15 +20,15 @@
     .card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.5rem; }
     .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
     @media (max-width: 768px) { .upload-grid { grid-template-columns: 1fr; } }
-    .file-input-wrap { border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; transition: 0.2s; }
+    .file-input-wrap { border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; transition: 0.2s; cursor: pointer; background: white; }
     .file-input-wrap:hover { border-color: var(--primary); background: #f8fafc; }
     .file-input-wrap input { display: none; }
     .file-input-wrap label { cursor: pointer; color: var(--primary); font-weight: 500; display: inline-block; margin-top: 0.5rem; }
     .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; }
-    .btn:hover { background: var(--primary-hover); }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-secondary { background: #64748b; }
-    .btn-secondary:hover { background: #475569; }
+    .btn-secondary:hover:not(:disabled) { background: #475569; }
     .status { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; display: none; }
     .status.error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
     .status.success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
@@ -38,18 +39,12 @@
     .summary-box h3 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-muted); }
     .summary-list { max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; color: var(--text); }
     .summary-list div { padding: 0.25rem 0; border-bottom: 1px solid #e5e7eb; }
-    
-    /* TAG FILTER PANEL */
     #filter-panel { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem; }
-    .tag-filter-btn {
-      padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--border); background: white;
-      color: var(--text-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; user-select: none;
-    }
+    .tag-filter-btn { padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--border); background: white; color: var(--text-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; user-select: none; }
     .tag-filter-btn:hover { border-color: var(--primary); color: var(--primary); }
     .tag-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
     .tag-filter-btn.all-btn { font-weight: 600; border-color: #cbd5e1; }
     .tag-filter-btn.all-btn.active { background: #334155; border-color: #334155; }
-
     .table-wrap { overflow-x: auto; max-height: 600px; border: 1px solid var(--border); border-radius: 8px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
@@ -65,6 +60,7 @@
     .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; vertical-align: middle; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .filter-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .file-success { color: var(--success) !important; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -75,12 +71,12 @@
     <div class="card">
       <div class="upload-grid">
         <div class="file-input-wrap" id="pa-drop">
-          <label>📁 Select PA Traffic Log Excel<br><small>Must contain "Source address" & "Destination address"</small></label>
+          <label for="pa-file">📁 Select PA Traffic Log Excel<br><small>Must contain "Source address" & "Destination address"</small></label>
           <input type="file" id="pa-file" accept=".xlsx,.xls,.csv">
           <div id="pa-name" style="margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;"></div>
         </div>
         <div class="file-input-wrap" id="psg-drop">
-          <label>📁 Select PSG Subnets Excel<br><small>4 sheets • Col B: VRF • Col C: Subnet</small></label>
+          <label for="psg-file">📁 Select PSG Subnets Excel<br><small>4 sheets • Col B: VRF • Col C: Subnet</small></label>
           <input type="file" id="psg-file" accept=".xlsx,.xls,.csv">
           <div id="psg-name" style="margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;"></div>
         </div>
@@ -149,7 +145,7 @@
     const ipRegex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
     function isValidIP(ip) {
       if (!ip || !ipRegex.test(ip)) return false;
-      return ip.split('.').every(o => parseInt(o) >= 0 && parseInt(o) <= 255);
+      return ip.split('.').every(o => { const n = parseInt(o,10); return n >= 0 && n <= 255; });
     }
     function ipToLong(ip) {
       return ip.split('.').reduce((acc, o) => (acc << 8) + parseInt(o, 10), 0) >>> 0;
@@ -158,7 +154,10 @@
       return [long >>> 24, (long >> 16) & 255, (long >> 8) & 255, long & 255].join('.');
     }
     function parseCIDR(cidr) {
-      const [ip, prefix] = cidr.split('/');
+      if (!cidr) return null;
+      const parts = cidr.split('/');
+      if (parts.length !== 2) return null;
+      const [ip, prefix] = parts;
       const p = parseInt(prefix, 10);
       if (isNaN(p) || p < 0 || p > 32) return null;
       const mask = p === 0 ? 0 : (~0 << (32 - p)) >>> 0;
@@ -233,6 +232,10 @@
       statusEl.innerHTML = type === 'loading' ? `<span class="loader"></span>${msg}` : msg;
     }
 
+    function updateButtonState() {
+      processBtn.disabled = !(paInput.files.length && psgInput.files.length);
+    }
+
     function renderFilters() {
       filterPanel.innerHTML = '';
       const allBtn = document.createElement('button');
@@ -248,8 +251,7 @@
         btn.onclick = () => {
           if (activeFilters.has(tag)) activeFilters.delete(tag);
           else activeFilters.add(tag);
-          renderFilters();
-          applyFilters();
+          renderFilters(); applyFilters();
         };
         filterPanel.appendChild(btn);
       });
@@ -275,7 +277,6 @@
         return;
       }
 
-      // Render headers if first time or structure changed
       if (thead.children.length === 0) {
         const headers = Object.keys(data[0]);
         thead.innerHTML = headers.map(h => `<th data-key="${h}">${h}</th>`).join('');
@@ -318,46 +319,60 @@
       tbody.appendChild(frag);
     }
 
-    // Quick filter from table badges
     window.filterByTagClick = function(tag) {
       if (activeFilters.has(tag)) {
-        // If already active and it's the only one, clear. Otherwise remove it.
         if (activeFilters.size === 1) activeFilters.clear();
         else activeFilters.delete(tag);
       } else {
         activeFilters.add(tag);
       }
-      renderFilters();
-      applyFilters();
+      renderFilters(); applyFilters();
     };
 
     // === FILE HANDLERS ===
-    paInput.addEventListener('change', e => {
-      document.getElementById('pa-name').textContent = e.target.files[0]?.name || '';
-      processBtn.disabled = !e.target.files[0] || !psgInput.files[0];
-    });
-    psgInput.addEventListener('change', e => {
-      document.getElementById('psg-name').textContent = e.target.files[0]?.name || '';
-      processBtn.disabled = !e.target.files[0] || !paInput.files[0];
-    });
+    function handleFileSelect(inputEl, nameEl) {
+      inputEl.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          nameEl.innerHTML = `✅ ${file.name} <span class="file-success">(Ready)</span>`;
+        } else {
+          nameEl.textContent = '';
+        }
+        updateButtonState();
+      });
+    }
+    handleFileSelect(paInput, document.getElementById('pa-name'));
+    handleFileSelect(psgInput, document.getElementById('psg-name'));
+
+    // Click wrapper to trigger file input
+    document.getElementById('pa-drop').addEventListener('click', () => paInput.click());
+    document.getElementById('psg-drop').addEventListener('click', () => psgInput.click());
 
     // === PROCESSING ===
     processBtn.addEventListener('click', async () => {
+      if (typeof XLSX === 'undefined') {
+        setStatus('❌ Excel library failed to load. Disable ad-blocker or check internet.', 'error');
+        return;
+      }
       if (!paInput.files[0] || !psgInput.files[0]) return;
+      
       setStatus('Parsing Excel files...', 'loading');
       processBtn.disabled = true;
       dashboardEl.style.display = 'none';
 
       try {
+        // Read PA Log
         const paBuf = await paInput.files[0].arrayBuffer();
         const paWb = XLSX.read(paBuf, { type: 'array' });
         const paRows = XLSX.utils.sheet_to_json(paWb.Sheets[paWb.SheetNames[0]], { defval: '' });
+        if (!paRows.length) throw new Error('PA Traffic Log appears empty or unreadable.');
 
         const keys = Object.keys(paRows[0] || {});
         const srcKey = keys.find(k => k.toLowerCase().includes('source address'));
         const dstKey = keys.find(k => k.toLowerCase().includes('destination address'));
-        if (!srcKey || !dstKey) throw new Error('PA Log must contain "Source address" and "Destination address" columns.');
+        if (!srcKey || !dstKey) throw new Error('Missing "Source address" or "Destination address" column in PA log.');
 
+        // Read PSG Subnets
         const psgBuf = await psgInput.files[0].arrayBuffer();
         const psgWb = XLSX.read(psgBuf, { type: 'array' });
         psgSubnets = [];
@@ -365,7 +380,7 @@
           const sheet = psgWb.Sheets[sheetName];
           const json = XLSX.utils.sheet_to_json(sheet, { header: 'A', defval: '' });
           for (const row of json) {
-            const cidr = row['C']?.trim();
+            const cidr = String(row['C'] || '').trim();
             if (cidr && parseCIDR(cidr)) psgSubnets.push({ cidr, sheet: sheetName });
           }
         }
@@ -410,7 +425,7 @@
         setStatus(`✅ Processed ${paRows.length} rows. Found ${uniqueTags.size} unique tags.`, 'success');
       } catch (err) {
         setStatus(`❌ Error: ${err.message}`, 'error');
-        console.error(err);
+        console.error('Processing failed:', err);
       } finally {
         processBtn.disabled = false;
       }
