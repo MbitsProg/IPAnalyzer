@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PA Firewall · IP Analyzer (Working)</title>
+  <title>PA Firewall · IP Analyzer (Tag Filtering Dashboard)</title>
   <style>
     * {
       box-sizing: border-box;
@@ -142,6 +142,55 @@
     }
     .badge-hardcoded { background: rgba(0, 230, 118, 0.15); color: #00e676; }
     .badge-psg { background: rgba(0, 229, 255, 0.15); color: #00e5ff; }
+
+    /* Tag filter bar */
+    .filter-bar {
+      background: #0e1520;
+      border: 1px solid #1c2e46;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .filter-group {
+      margin-bottom: 14px;
+    }
+    .filter-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #4a6280;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filter-tag {
+      background: #121d2e;
+      border: 1px solid #243a56;
+      border-radius: 30px;
+      padding: 4px 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: 0.1s;
+      font-family: monospace;
+    }
+    .filter-tag.active {
+      background: rgba(0, 229, 255, 0.2);
+      border-color: #00e5ff;
+      color: #00e5ff;
+    }
+    .filter-tag[data-type="hardcoded"].active { background: rgba(0,230,118,0.2); border-color: #00e676; color: #00e676; }
+    .filter-tag[data-type="psg"].active { background: rgba(0,229,255,0.2); border-color: #00e5ff; color: #00e5ff; }
+    .clear-filters {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: #ff5252;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
     .table-wrapper {
       overflow-x: auto;
       background: #0e1520;
@@ -183,6 +232,26 @@
       color: #ffab40;
     }
     .hidden { display: none; }
+    .unmatched-panel {
+      background: #0e1520;
+      border: 1px solid #243a56;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .cidr-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .cidr-tag {
+      background: #121d2e;
+      border: 1px solid #243a56;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.7rem;
+    }
   </style>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -190,7 +259,7 @@
 <div class="app">
   <div class="header">
     <div class="logo">⛨</div>
-    <div><h1>PA Firewall · <em>IP Analyzer</em> <span style="font-size:0.7rem;">✔️ Guaranteed dashboard</span></h1></div>
+    <div><h1>PA Firewall · <em>IP Analyzer</em> <span style="font-size:0.7rem;">✔️ Tag filter dashboard</span></h1></div>
   </div>
 
   <div class="upload-panel">
@@ -215,9 +284,32 @@
 
   <div id="resultsContainer" class="hidden">
     <div class="stats-grid" id="statsPanel"></div>
+
+    <!-- Filter Dashboard -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <div class="filter-label">🏷️ Filter by Tag Type</div>
+        <div class="tag-cloud" id="tagTypeFilters"></div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">🌐 Filter by Subnet Block (from unmatched summarization)</div>
+        <div class="tag-cloud" id="subnetFilters"></div>
+      </div>
+      <div class="clear-filters" id="clearFiltersBtn">✖ Clear all filters</div>
+    </div>
+
     <div class="table-wrapper"><table id="dataTable"><thead id="tableHeader"></thead><tbody id="tableBody"></tbody></table></div>
     <div id="paginationControls" class="pagination"></div>
-    <div><button id="exportCsvBtn" class="btn btn-secondary">📎 Export CSV</button></div>
+
+    <!-- Unmatched summary panel -->
+    <div class="unmatched-panel" id="unmatchedPanel">
+      <div style="font-weight:600; margin-bottom:8px;">📋 Unmatched IP Summary</div>
+      <div id="summaryBlocks" class="cidr-list">—</div>
+      <div style="margin-top:12px; font-weight:600;">🔹 Individual unmatched IPs</div>
+      <div id="individualIps" class="cidr-list">—</div>
+    </div>
+
+    <div><button id="exportCsvBtn" class="btn btn-secondary">📎 Export CSV (with tags)</button></div>
   </div>
 </div>
 
@@ -227,9 +319,11 @@
 
   let paData = null;          // { rows, srcCol, dstCol, headers }
   let psgSubnets = [];        // { networkInt, maskInt, sheetName }
-  let taggedRows = [];
+  let taggedRows = [];        // full dataset with Source_Tag, Destination_Tag
+  let unmatchedSummary = { blocks: [], singles: [] }; // from unmatched IPs
   let currentPage = 1, rowsPerPage = 500;
   let currentSort = { col: null, asc: true };
+  let activeFilters = { tagTypes: new Set(), subnetBlocks: new Set() }; // tagTypes: "Hardcoded_Subnet", "PSG_xxx"
 
   // ---------- IP helpers ----------
   const ipCache = new Map();
@@ -275,7 +369,7 @@
     return tags.join(", ");
   }
 
-  // ---------- File Parsing (robust) ----------
+  // ---------- File Parsing ----------
   async function loadPaLog(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -308,7 +402,7 @@
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
           if (!rows) continue;
           for (let i=0; i<rows.length; i++) {
-            const cidrRaw = rows[i][2] ? String(rows[i][2]).trim() : ""; // Column C = index 2
+            const cidrRaw = rows[i][2] ? String(rows[i][2]).trim() : "";
             if (!cidrRaw) continue;
             const parsed = parseCidr(cidrRaw);
             if (parsed) {
@@ -325,6 +419,34 @@
       reader.onerror = () => reject("File read error");
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  // ---------- Summarization for unmatched IPs ----------
+  function summarizeCidrs(ipInts) {
+    if (!ipInts.length) return { blocks: [], singles: [] };
+    const sorted = [...new Set(ipInts)].sort((a,b)=>a-b);
+    const blocks = [];
+    const singles = [];
+    let i = 0;
+    while (i < sorted.length) {
+      let best = null;
+      for (let p=30; p>=24; p--) {
+        const step = 1 << (32-p);
+        const base = sorted[i] & (0xFFFFFFFF << (32-p));
+        const end = base + step - 1;
+        let count = 0;
+        for (let j=i; j<sorted.length && sorted[j]<=end; j++) count++;
+        if (count >= 2 && (!best || count > best.count)) best = { prefix: p, base, count, endIdx: i+count-1 };
+      }
+      if (best && best.count >= 2) {
+        blocks.push({ cidr: `${intToIp(best.base)}/${best.prefix}`, count: best.count });
+        i = best.endIdx + 1;
+      } else {
+        singles.push(intToIp(sorted[i]));
+        i++;
+      }
+    }
+    return { blocks, singles };
   }
 
   // ---------- Analysis ----------
@@ -368,54 +490,61 @@
     }
     setProgress(85);
     taggedRows = newTagged;
-    // Summarize unmatched IPs
-    const unmatchedArray = Array.from(unmatchedInts);
-    const summary = summarizeCidrs(unmatchedArray);
-    window.summaryResult = summary;
+    const summary = summarizeCidrs(Array.from(unmatchedInts));
+    unmatchedSummary = summary;
     setProgress(95);
     renderDashboard();
     setProgress(100);
     setTimeout(() => setProgress(null), 500);
   }
 
-  // Simple CIDR summarization for unmatched IPs
-  function summarizeCidrs(ipInts) {
-    if (!ipInts.length) return { blocks: [], singles: [] };
-    const sorted = [...new Set(ipInts)].sort((a,b)=>a-b);
-    const blocks = [];
-    const singles = [];
-    let i = 0;
-    while (i < sorted.length) {
-      let best = null;
-      for (let p=30; p>=24; p--) {
-        const step = 1 << (32-p);
-        const base = sorted[i] & (0xFFFFFFFF << (32-p));
-        const end = base + step - 1;
-        let count = 0;
-        for (let j=i; j<sorted.length && sorted[j]<=end; j++) count++;
-        if (count >= 2 && (!best || count > best.count)) best = { prefix: p, base, count, endIdx: i+count-1 };
+  // ---------- Filter logic ----------
+  function matchesFilters(row) {
+    // Tag type filter: check if Source_Tag or Destination_Tag contains any selected tag type
+    if (activeFilters.tagTypes.size > 0) {
+      const srcTags = row.Source_Tag ? row.Source_Tag.split(", ") : [];
+      const dstTags = row.Destination_Tag ? row.Destination_Tag.split(", ") : [];
+      const allTags = [...srcTags, ...dstTags];
+      let hasMatch = false;
+      for (let t of allTags) {
+        if (activeFilters.tagTypes.has(t)) { hasMatch = true; break; }
       }
-      if (best && best.count >= 2) {
-        blocks.push({ cidr: `${intToIp(best.base)}/${best.prefix}`, count: best.count });
-        i = best.endIdx + 1;
-      } else {
-        singles.push(intToIp(sorted[i]));
-        i++;
-      }
+      if (!hasMatch) return false;
     }
-    return { blocks, singles };
+    // Subnet block filter: applies only to unmatched IPs? Actually filter by the row's own IP? For simplicity, we filter by Source or Destination IP belonging to a summarized block.
+    // But we don't store per-IP block mapping. Instead, we'll implement as: if subnet filter active, show rows where either source or destination IP is in the unmatched summary blocks (only relevant for unmatched). This is a bit advanced; to keep it simple, we'll filter by "Source_Tag or Destination_Tag contains the block's CIDR"? No.
+    // Better: For subnet filter, we only show rows that are unmatched and whose IP falls into the selected block. We'll compute a map of IP->blockCIDR.
+    if (activeFilters.subnetBlocks.size > 0) {
+      // Build a set of IPs that belong to any selected block
+      let ipInSelectedBlock = false;
+      const srcIp = row.Source_address || row["Source address"] || "";
+      const dstIp = row.Destination_address || row["Destination address"] || "";
+      const srcInt = ipToInt(srcIp);
+      const dstInt = ipToInt(dstIp);
+      for (let blockCidr of activeFilters.subnetBlocks) {
+        const block = parseCidr(blockCidr);
+        if (block) {
+          if (srcInt !== null && ((srcInt & block.mask) >>> 0 === block.network)) ipInSelectedBlock = true;
+          if (dstInt !== null && ((dstInt & block.mask) >>> 0 === block.network)) ipInSelectedBlock = true;
+        }
+      }
+      if (!ipInSelectedBlock) return false;
+    }
+    return true;
   }
 
-  // ---------- Dashboard Rendering (with pagination) ----------
+  // ---------- Dashboard Rendering with filters ----------
   function renderDashboard() {
     if (!taggedRows.length) return;
-    document.getElementById("resultsContainer").classList.remove("hidden");
     const headers = paData.headers;
     const displayHeaders = [...headers, "Source_Tag", "Destination_Tag"];
     
-    let sorted = [...taggedRows];
+    // Apply filters
+    let filtered = taggedRows.filter(row => matchesFilters(row));
+    
+    // Sorting
     if (currentSort.col) {
-      sorted.sort((a,b) => {
+      filtered.sort((a,b) => {
         let av = a[currentSort.col] ?? "";
         let bv = b[currentSort.col] ?? "";
         if (typeof av === "number" && typeof bv === "number") return currentSort.asc ? av-bv : bv-av;
@@ -426,19 +555,20 @@
         return 0;
       });
     }
-    const total = sorted.length;
-    const pages = Math.ceil(total / rowsPerPage);
+    const totalFiltered = filtered.length;
+    const pages = Math.ceil(totalFiltered / rowsPerPage);
     if (currentPage > pages) currentPage = pages || 1;
     const start = (currentPage-1)*rowsPerPage;
-    const pageRows = sorted.slice(start, start+rowsPerPage);
+    const pageRows = filtered.slice(start, start+rowsPerPage);
     
     // Stats
     let rowsWithTags = taggedRows.filter(r => r.Source_Tag || r.Destination_Tag).length;
     document.getElementById("statsPanel").innerHTML = `
-      <div class="stat-card"><div class="number">${total.toLocaleString()}</div><div class="label">Total Rows</div></div>
+      <div class="stat-card"><div class="number">${taggedRows.length.toLocaleString()}</div><div class="label">Total Rows</div></div>
       <div class="stat-card"><div class="number">${rowsWithTags.toLocaleString()}</div><div class="label">Tagged Rows</div></div>
-      <div class="stat-card"><div class="number">${window.summaryResult?.blocks.length || 0}</div><div class="label">Summarized Blocks</div></div>
-      <div class="stat-card"><div class="number">${window.summaryResult?.singles.length || 0}</div><div class="label">Unmatched Singles</div></div>
+      <div class="stat-card"><div class="number">${unmatchedSummary.blocks.length}</div><div class="label">Summarized Blocks</div></div>
+      <div class="stat-card"><div class="number">${unmatchedSummary.singles.length}</div><div class="label">Unmatched Singles</div></div>
+      <div class="stat-card"><div class="number">${totalFiltered.toLocaleString()}</div><div class="label">Filtered Rows</div></div>
     `;
     
     // Table header
@@ -475,7 +605,62 @@
         <option ${rowsPerPage===1000?'selected':''} value="1000">1000</option>
       </select> rows
     `;
+    
+    // Build tag filters dynamically based on actual tags present in data
+    const allTags = new Set();
+    for (let row of taggedRows) {
+      const srcTags = row.Source_Tag ? row.Source_Tag.split(", ") : [];
+      const dstTags = row.Destination_Tag ? row.Destination_Tag.split(", ") : [];
+      [...srcTags, ...dstTags].forEach(t => { if (t) allTags.add(t); });
+    }
+    const tagTypeContainer = document.getElementById("tagTypeFilters");
+    tagTypeContainer.innerHTML = Array.from(allTags).sort().map(tag => {
+      const isActive = activeFilters.tagTypes.has(tag);
+      const typeClass = tag.startsWith("Hardcoded") ? "hardcoded" : "psg";
+      return `<span class="filter-tag ${isActive ? 'active' : ''}" data-type="${typeClass}" data-tag="${tag.replace(/"/g,'&quot;')}" onclick="toggleTagFilter('${tag.replace(/'/g,"\\'")}')">${tag}</span>`;
+    }).join('');
+    
+    // Subnet filters from unmatched summary blocks
+    const subnetContainer = document.getElementById("subnetFilters");
+    if (unmatchedSummary.blocks.length) {
+      subnetContainer.innerHTML = unmatchedSummary.blocks.map(b => {
+        const isActive = activeFilters.subnetBlocks.has(b.cidr);
+        return `<span class="filter-tag ${isActive ? 'active' : ''}" data-subnet="${b.cidr}" onclick="toggleSubnetFilter('${b.cidr}')">${b.cidr} (${b.count} IPs)</span>`;
+      }).join('');
+    } else {
+      subnetContainer.innerHTML = "<span style='color:#4a6280;'>— No summarized blocks —</span>";
+    }
+    
+    // Unmatched summary panel
+    const summaryDiv = document.getElementById("summaryBlocks");
+    const singlesDiv = document.getElementById("individualIps");
+    if (unmatchedSummary.blocks.length) {
+      summaryDiv.innerHTML = unmatchedSummary.blocks.map(b => `<div class="cidr-tag">${b.cidr} (${b.count} IPs)</div>`).join('');
+    } else summaryDiv.innerHTML = "— No summarizable blocks —";
+    if (unmatchedSummary.singles.length) {
+      singlesDiv.innerHTML = unmatchedSummary.singles.map(ip => `<div class="cidr-tag">${ip}</div>`).join('');
+    } else singlesDiv.innerHTML = "— No individual unmatched IPs —";
   }
+
+  // Filter toggles
+  window.toggleTagFilter = (tag) => {
+    if (activeFilters.tagTypes.has(tag)) activeFilters.tagTypes.delete(tag);
+    else activeFilters.tagTypes.add(tag);
+    currentPage = 1;
+    renderDashboard();
+  };
+  window.toggleSubnetFilter = (cidr) => {
+    if (activeFilters.subnetBlocks.has(cidr)) activeFilters.subnetBlocks.delete(cidr);
+    else activeFilters.subnetBlocks.add(cidr);
+    currentPage = 1;
+    renderDashboard();
+  };
+  document.getElementById("clearFiltersBtn").addEventListener("click", () => {
+    activeFilters.tagTypes.clear();
+    activeFilters.subnetBlocks.clear();
+    currentPage = 1;
+    renderDashboard();
+  });
 
   window.changePage = (page) => { currentPage = page; renderDashboard(); };
   window.changeRowsPerPage = (val) => { rowsPerPage = parseInt(val,10); currentPage = 1; renderDashboard(); };
@@ -564,6 +749,9 @@
     paData = null;
     psgSubnets = [];
     taggedRows = [];
+    unmatchedSummary = { blocks: [], singles: [] };
+    activeFilters.tagTypes.clear();
+    activeFilters.subnetBlocks.clear();
     document.getElementById("paStatus").innerHTML = "No file loaded";
     document.getElementById("psgStatus").innerHTML = "No file loaded";
     document.getElementById("resultsContainer").classList.add("hidden");
