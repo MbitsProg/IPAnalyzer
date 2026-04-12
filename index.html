@@ -3,28 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PA Firewall · IP Analyzer (Stable)</title>
+  <title>PA Firewall · IP Analyzer (Working)</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Barlow:wght@400;500;600;700;800&display=swap');
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-
     body {
       background: #080d14;
       color: #b8cce0;
       font-family: 'IBM Plex Mono', monospace;
       padding: 28px 24px;
     }
-
     .app {
       max-width: 1600px;
       margin: 0 auto;
     }
-
     .header {
       display: flex;
       align-items: center;
@@ -33,7 +28,6 @@
       border-bottom: 1px solid #1c2e46;
       padding-bottom: 20px;
     }
-
     .logo {
       width: 48px;
       height: 48px;
@@ -47,52 +41,29 @@
       color: #080d14;
       font-family: 'Barlow', sans-serif;
     }
-
     .header h1 {
       font-family: 'Barlow', sans-serif;
       font-size: 1.5rem;
       font-weight: 800;
       color: white;
     }
-
     .header h1 em {
       color: #00e5ff;
       font-style: normal;
     }
-
-    .header p {
-      font-size: 0.7rem;
-      color: #4a6280;
-      margin-top: 4px;
-    }
-
     .upload-panel {
       display: flex;
       gap: 24px;
       margin-bottom: 28px;
       flex-wrap: wrap;
     }
-
     .upload-card {
       flex: 1;
       background: #0e1520;
       border: 1px solid #1c2e46;
       border-radius: 16px;
       padding: 20px;
-      transition: border 0.2s;
     }
-
-    .upload-card h3 {
-      font-family: 'Barlow', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: #00e5ff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     .file-dropzone {
       border: 2px dashed #243a56;
       border-radius: 12px;
@@ -102,34 +73,12 @@
       cursor: pointer;
       transition: 0.2s;
     }
-
-    .file-dropzone.drag {
-      border-color: #00e5ff;
-      background: rgba(0, 229, 255, 0.05);
-    }
-
     .file-status {
       font-size: 0.75rem;
       margin-top: 10px;
-      color: #4a6280;
     }
-
-    .file-status.success {
-      color: #00e676;
-    }
-
-    .file-status.error {
-      color: #ff5252;
-    }
-
-    .action-bar {
-      display: flex;
-      gap: 12px;
-      margin: 20px 0 24px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
+    .file-status.success { color: #00e676; }
+    .file-status.error { color: #ff5252; }
     .btn {
       font-family: 'Barlow', sans-serif;
       font-weight: 700;
@@ -137,35 +86,21 @@
       border-radius: 8px;
       padding: 9px 22px;
       cursor: pointer;
-      transition: 0.15s;
       font-size: 0.85rem;
     }
-
     .btn-primary {
       background: #00e5ff;
       color: #080d14;
     }
-
-    .btn-primary:hover {
-      background: #33ecff;
-    }
-
     .btn-primary:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
-
     .btn-secondary {
       background: transparent;
       border: 1px solid #243a56;
       color: #b8cce0;
     }
-
-    .btn-secondary:hover {
-      border-color: #00e5ff;
-      color: #00e5ff;
-    }
-
     .progress-wrap {
       height: 3px;
       background: #1c2e46;
@@ -173,21 +108,18 @@
       margin: 12px 0;
       overflow: hidden;
     }
-
     .progress-bar {
       height: 100%;
       background: linear-gradient(90deg, #00e5ff, #00e676);
       width: 0%;
       transition: width 0.25s;
     }
-
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 12px;
       margin-bottom: 24px;
     }
-
     .stat-card {
       background: #0e1520;
       border: 1px solid #1c2e46;
@@ -195,33 +127,12 @@
       padding: 12px;
       text-align: center;
     }
-
     .stat-card .number {
       font-family: 'Barlow', sans-serif;
       font-size: 1.6rem;
       font-weight: 800;
       color: white;
     }
-
-    .stat-card .label {
-      font-size: 0.6rem;
-      color: #4a6280;
-      text-transform: uppercase;
-    }
-
-    .section-title {
-      font-family: 'Barlow', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: #4a6280;
-      margin: 20px 0 12px 0;
-      letter-spacing: 0.1em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     .badge {
       display: inline-block;
       font-size: 0.62rem;
@@ -229,124 +140,49 @@
       border-radius: 20px;
       font-weight: 600;
     }
-
-    .badge-hardcoded {
-      background: rgba(0, 230, 118, 0.15);
-      color: #00e676;
-    }
-
-    .badge-psg {
-      background: rgba(0, 229, 255, 0.15);
-      color: #00e5ff;
-    }
-
+    .badge-hardcoded { background: rgba(0, 230, 118, 0.15); color: #00e676; }
+    .badge-psg { background: rgba(0, 229, 255, 0.15); color: #00e5ff; }
     .table-wrapper {
       overflow-x: auto;
       background: #0e1520;
       border: 1px solid #1c2e46;
       border-radius: 12px;
       margin-bottom: 28px;
+      max-height: 500px;
+      overflow-y: auto;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.75rem;
     }
-
     th {
       background: #121d2e;
       padding: 10px 12px;
       text-align: left;
-      color: #4a6280;
       cursor: pointer;
-      user-select: none;
       position: sticky;
       top: 0;
-      z-index: 10;
     }
-
-    th:hover {
-      color: #00e5ff;
-    }
-
     td {
       padding: 8px 12px;
       border-bottom: 1px solid #1c2e46;
     }
-
-    tr:hover {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
     .pagination {
       display: flex;
       justify-content: center;
-      align-items: center;
       gap: 12px;
       margin: 16px 0;
-      flex-wrap: wrap;
     }
-
-    .pagination button {
-      background: #121d2e;
-      border: 1px solid #243a56;
-      padding: 6px 12px;
-      border-radius: 6px;
-      color: #b8cce0;
-      cursor: pointer;
-    }
-
-    .pagination button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .pagination select {
-      background: #121d2e;
-      border: 1px solid #243a56;
-      color: #b8cce0;
-      padding: 6px;
-      border-radius: 6px;
-    }
-
-    .unmatched-panel {
-      background: #0e1520;
-      border: 1px solid #243a56;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 24px;
-    }
-
-    .cidr-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .cidr-tag {
-      background: #121d2e;
-      border: 1px solid #243a56;
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 0.7rem;
-      font-family: monospace;
-    }
-
     .error-box {
       background: rgba(255, 82, 82, 0.1);
       border-left: 3px solid #ff5252;
       padding: 12px;
-      border-radius: 8px;
       margin: 12px 0;
       font-size: 0.75rem;
       color: #ffab40;
     }
-
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
   </style>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -354,174 +190,113 @@
 <div class="app">
   <div class="header">
     <div class="logo">⛨</div>
-    <div>
-      <h1>PA Firewall · <em>IP Analyzer</em> <span style="font-size:0.7rem; color:#00e676;">⚡ Paginated & Stable</span></h1>
-      <p>Hardcoded + PSG subnets | Smart tagging | Handles 100k+ rows without freeze</p>
-    </div>
+    <div><h1>PA Firewall · <em>IP Analyzer</em> <span style="font-size:0.7rem;">✔️ Guaranteed dashboard</span></h1></div>
   </div>
 
   <div class="upload-panel">
     <div class="upload-card">
-      <h3>📁 1. PA Traffic Log (Excel)</h3>
-      <div id="paDropzone" class="file-dropzone">
-        📂 Drop or click to upload
-        <input type="file" id="paFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
-      </div>
+      <h3>📁 1. PA Traffic Log</h3>
+      <div id="paDropzone" class="file-dropzone">📂 Drop or click to upload<input type="file" id="paFileInput" accept=".xlsx,.xls,.csv" style="display:none;"></div>
       <div id="paStatus" class="file-status">No file loaded</div>
-      <div class="helper-note" style="font-size:0.7rem; margin-top:8px; color:#4a6280;">Requires columns: <strong>Source address</strong> & <strong>Destination address</strong></div>
     </div>
-
     <div class="upload-card">
-      <h3>🗺️ 2. PSG Subnets (Excel)</h3>
-      <div id="psgDropzone" class="file-dropzone">
-        📂 Drop or click to upload
-        <input type="file" id="psgFileInput" accept=".xlsx,.xls" style="display:none;">
-      </div>
+      <h3>🗺️ 2. PSG Subnets</h3>
+      <div id="psgDropzone" class="file-dropzone">📂 Drop or click to upload<input type="file" id="psgFileInput" accept=".xlsx,.xls" style="display:none;"></div>
       <div id="psgStatus" class="file-status">No file loaded</div>
-      <div class="helper-note" style="font-size:0.7rem; margin-top:8px; color:#4a6280;">Sheets with Column C = Subnet (CIDR). Sheet name → tag prefix</div>
     </div>
   </div>
 
   <div class="action-bar">
-    <button id="analyzeBtn" class="btn btn-primary" disabled>▶ Run Analysis & Tagging</button>
-    <button id="clearBtn" class="btn btn-secondary">✖ Clear All</button>
+    <button id="analyzeBtn" class="btn btn-primary" disabled>▶ Run Analysis</button>
+    <button id="clearBtn" class="btn btn-secondary">✖ Clear</button>
   </div>
   <div id="progressWrap" class="progress-wrap hidden"><div id="progressBar" class="progress-bar"></div></div>
   <div id="errorBox" class="error-box hidden"></div>
 
   <div id="resultsContainer" class="hidden">
     <div class="stats-grid" id="statsPanel"></div>
-    <div class="section-title">🔍 TAGGED TRAFFIC LOG (Source_Tag / Destination_Tag)</div>
-    <div class="table-wrapper" id="tableWrapper">
-      <table id="dataTable">
-        <thead id="tableHeader"></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
+    <div class="table-wrapper"><table id="dataTable"><thead id="tableHeader"></thead><tbody id="tableBody"></tbody></table></div>
     <div id="paginationControls" class="pagination"></div>
-    <div class="section-title">📋 UNMATCHED SUMMARY (CIDR blocks + individual IPs)</div>
-    <div id="unmatchedPanel" class="unmatched-panel">
-      <div style="margin-bottom: 12px; font-weight:600;">✨ Summarized blocks (/24 – /30)</div>
-      <div id="summaryBlocks" class="cidr-list">—</div>
-      <div style="margin: 16px 0 8px 0; font-weight:600;">⚡ Individual IPs (not summarizable)</div>
-      <div id="individualIps" class="cidr-list">—</div>
-    </div>
-    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
-      <button id="exportCsvBtn" class="btn btn-secondary">📎 Export CSV (Tagged Log + Summary)</button>
-    </div>
+    <div><button id="exportCsvBtn" class="btn btn-secondary">📎 Export CSV</button></div>
   </div>
 </div>
 
 <script>
-  // --------------------------------------------------------------
-  // 1. HARDCODED SUBNETS
-  const HARDCODED_SUBNETS = [
-    "10.109.187.0/27", "10.109.34.0/24", "10.109.66.0/24",
-    "10.109.65.0/24", "10.109.77.64/29", "10.118.44.0/25", "10.109.186.0/24"
-  ];
+  // Hardcoded subnets
+  const HARDCODED_SUBNETS = ["10.109.187.0/27","10.109.34.0/24","10.109.66.0/24","10.109.65.0/24","10.109.77.64/29","10.118.44.0/25","10.109.186.0/24"];
 
-  // Global state
-  let paWorkbookData = null;
-  let psgSubnetList = [];
-  let taggedDataset = [];
-  let summarizedResult = null;
-  let currentPage = 1;
-  let rowsPerPage = 500;
+  let paData = null;          // { rows, srcCol, dstCol, headers }
+  let psgSubnets = [];        // { networkInt, maskInt, sheetName }
+  let taggedRows = [];
+  let currentPage = 1, rowsPerPage = 500;
   let currentSort = { col: null, asc: true };
 
-  // ---------- IP & CIDR utils (memoized) ----------
-  const ipMemo = new Map();
-  function ipToIntFast(ip) {
+  // ---------- IP helpers ----------
+  const ipCache = new Map();
+  function ipToInt(ip) {
     if (!ip || typeof ip !== 'string') return null;
-    const cached = ipMemo.get(ip);
-    if (cached !== undefined) return cached;
+    if (ipCache.has(ip)) return ipCache.get(ip);
     const parts = ip.trim().split('.');
-    if (parts.length !== 4) { ipMemo.set(ip, null); return null; }
+    if (parts.length !== 4) { ipCache.set(ip, null); return null; }
     let n = 0;
-    for (let i = 0; i < 4; i++) {
-      const v = parseInt(parts[i], 10);
-      if (isNaN(v) || v < 0 || v > 255) { ipMemo.set(ip, null); return null; }
-      n = (n << 8) | v;
+    for (let i=0; i<4; i++) {
+      const v = parseInt(parts[i],10);
+      if (isNaN(v) || v<0 || v>255) { ipCache.set(ip, null); return null; }
+      n = (n<<8) | v;
     }
-    const res = n >>> 0;
-    ipMemo.set(ip, res);
+    const res = n>>>0;
+    ipCache.set(ip, res);
     return res;
   }
   const intToIp = (n) => `${(n>>>24)&255}.${(n>>>16)&255}.${(n>>>8)&255}.${n&255}`;
 
-  function parseCidrFast(cidr) {
+  function parseCidr(cidr) {
     const [ipStr, bits] = cidr.split('/');
     if (!bits) return null;
-    const prefix = parseInt(bits, 10);
-    if (isNaN(prefix) || prefix < 0 || prefix > 32) return null;
-    const mask = (prefix === 0) ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
-    const network = (ipToIntFast(ipStr) & mask) >>> 0;
+    const prefix = parseInt(bits,10);
+    if (isNaN(prefix) || prefix<0 || prefix>32) return null;
+    const mask = (prefix===0) ? 0 : (0xFFFFFFFF << (32-prefix)) >>> 0;
+    const network = (ipToInt(ipStr) & mask) >>> 0;
     if (network === undefined) return null;
-    return { cidr, network, mask, prefix };
+    return { network, mask, prefix };
   }
 
-  const hardcodedParsed = HARDCODED_SUBNETS.map(c => parseCidrFast(c)).filter(c => c);
+  const hardcodedParsed = HARDCODED_SUBNETS.map(c => parseCidr(c)).filter(c => c);
 
-  function getTagsForIpFast(ipInt) {
-    if (ipInt === null) return [];
+  function getTags(ipInt) {
+    if (ipInt === null) return "";
     const tags = [];
-    for (let hc of hardcodedParsed) {
-      if ((ipInt & hc.mask) >>> 0 === hc.network) {
-        tags.push("Hardcoded_Subnet");
-        break;
-      }
+    for (let h of hardcodedParsed) {
+      if ((ipInt & h.mask) >>> 0 === h.network) { tags.push("Hardcoded_Subnet"); break; }
     }
-    for (let psg of psgSubnetList) {
-      if ((ipInt & psg.maskInt) >>> 0 === psg.networkInt) {
-        tags.push(`PSG_${psg.sheetName}`);
-      }
+    for (let p of psgSubnets) {
+      if ((ipInt & p.maskInt) >>> 0 === p.networkInt) tags.push(`PSG_${p.sheetName}`);
     }
-    return tags;
+    return tags.join(", ");
   }
 
-  // ---------- CIDR summarization (divide & conquer) ----------
-  function summarizeToCidrs(ipInts) {
-    if (!ipInts.length) return { summarizedBlocks: [], individualIps: [] };
-    const sorted = [...new Set(ipInts)].sort((a,b) => a - b);
-    const results = [];
-
-    function tryCover(startIdx, endIdx, prefix) {
-      if (startIdx > endIdx) return false;
-      const step = 1 << (32 - prefix);
-      const base = sorted[startIdx] & (0xFFFFFFFF << (32 - prefix));
-      const blockStart = base;
-      const blockEnd = base + step - 1;
-      if (sorted[startIdx] >= blockStart && sorted[endIdx] <= blockEnd) {
-        results.push({ cidr: `${intToIp(base)}/${prefix}`, ips: sorted.slice(startIdx, endIdx+1) });
-        return true;
-      }
-      return false;
-    }
-
-    function recursiveSplit(left, right, maxPrefix=30, minPrefix=24) {
-      if (left > right) return;
-      for (let p = maxPrefix; p >= minPrefix; p--) {
-        if (tryCover(left, right, p)) return;
-      }
-      const midIp = (sorted[left] + sorted[right]) >>> 1;
-      let splitIdx = left;
-      while (splitIdx <= right && sorted[splitIdx] <= midIp) splitIdx++;
-      if (splitIdx === left || splitIdx > right) {
-        for (let i = left; i <= right; i++) results.push({ cidr: null, ips: [sorted[i]] });
-        return;
-      }
-      recursiveSplit(left, splitIdx-1, maxPrefix, minPrefix);
-      recursiveSplit(splitIdx, right, maxPrefix, minPrefix);
-    }
-
-    recursiveSplit(0, sorted.length-1, 30, 24);
-    const summarizedBlocks = results.filter(r => r.cidr !== null);
-    const individualIps = results.filter(r => r.cidr === null).flatMap(r => r.ips.map(intToIp));
-    return { summarizedBlocks, individualIps };
+  // ---------- File Parsing (robust) ----------
+  async function loadPaLog(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        if (!rows.length) reject("Empty file");
+        const headers = Object.keys(rows[0]);
+        const srcCol = headers.find(h => h.toLowerCase() === "source address");
+        const dstCol = headers.find(h => h.toLowerCase() === "destination address");
+        if (!srcCol || !dstCol) reject(`Missing columns. Found: ${headers.join(", ")}`);
+        resolve({ rows, srcCol, dstCol, headers });
+      };
+      reader.onerror = () => reject("File read error");
+      reader.readAsArrayBuffer(file);
+    });
   }
 
-  // ---------- File Parsing ----------
-  async function parsePsgSubnetsFast(file) {
+  async function loadPsgSubnets(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -531,132 +306,119 @@
         for (let sheetName of workbook.SheetNames) {
           const sheet = workbook.Sheets[sheetName];
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-          if (!rows || rows.length < 2) continue;
-          for (let i = 0; i < rows.length; i++) {
-            const cidrRaw = rows[i][2] ? String(rows[i][2]).trim() : "";
+          if (!rows) continue;
+          for (let i=0; i<rows.length; i++) {
+            const cidrRaw = rows[i][2] ? String(rows[i][2]).trim() : ""; // Column C = index 2
             if (!cidrRaw) continue;
-            const parsed = parseCidrFast(cidrRaw);
+            const parsed = parseCidr(cidrRaw);
             if (parsed) {
               subnets.push({
-                cidr: cidrRaw,
-                sheetName: sheetName,
                 networkInt: parsed.network,
-                maskInt: parsed.mask
+                maskInt: parsed.mask,
+                sheetName: sheetName
               });
             }
           }
         }
         resolve(subnets);
       };
-      reader.onerror = reject;
+      reader.onerror = () => reject("File read error");
       reader.readAsArrayBuffer(file);
     });
   }
 
-  async function parsePaLogFast(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-        if (!rows || rows.length === 0) reject(new Error("Empty file"));
-        const headers = Object.keys(rows[0] || {});
-        const srcCol = headers.find(h => h.toLowerCase() === "source address");
-        const dstCol = headers.find(h => h.toLowerCase() === "destination address");
-        if (!srcCol || !dstCol) {
-          reject(new Error(`Missing "Source address" / "Destination address". Found: ${headers.join(", ")}`));
-        }
-        resolve({ rows, srcCol, dstCol, headers });
-      };
-      reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
-  // ---------- Core Analysis (chunked with requestIdleCallback) ----------
+  // ---------- Analysis ----------
   async function runAnalysis() {
-    if (!paWorkbookData) { showError("Please upload PA Traffic Log first."); return; }
-    if (!psgSubnetList.length) { showError("Please upload PSG Subnets file."); return; }
+    if (!paData) { showError("Load PA Traffic Log first."); return; }
+    if (!psgSubnets.length) { showError("Load PSG Subnets file first."); return; }
 
-    showError(null);
-    setProgress(5);
-    const { rows, srcCol, dstCol, headers } = paWorkbookData;
-    const totalRows = rows.length;
-    const taggedRows = [];
-    const unmatchedIpInts = new Set();
+    setProgress(10);
+    document.getElementById("resultsContainer").classList.add("hidden");
+    const { rows, srcCol, dstCol } = paData;
+    const total = rows.length;
+    const newTagged = [];
+    const unmatchedInts = new Set();
 
-    const CHUNK_SIZE = 8000;
-    let processed = 0;
-
-    while (processed < totalRows) {
-      const end = Math.min(processed + CHUNK_SIZE, totalRows);
-      for (let i = processed; i < end; i++) {
-        const row = rows[i];
-        const srcIpRaw = row[srcCol] ? String(row[srcCol]).trim() : "";
-        const dstIpRaw = row[dstCol] ? String(row[dstCol]).trim() : "";
-        let srcTag = "", dstTag = "";
-        let srcInt = null, dstInt = null;
-        if (srcIpRaw) {
-          srcInt = ipToIntFast(srcIpRaw);
-          if (srcInt !== null) {
-            const tags = getTagsForIpFast(srcInt);
-            srcTag = tags.join(", ");
-            if (srcTag === "") unmatchedIpInts.add(srcInt);
-          }
+    for (let i=0; i<total; i++) {
+      const row = rows[i];
+      const srcRaw = row[srcCol] ? String(row[srcCol]).trim() : "";
+      const dstRaw = row[dstCol] ? String(row[dstCol]).trim() : "";
+      let srcTag = "", dstTag = "";
+      let srcInt = null, dstInt = null;
+      if (srcRaw) {
+        srcInt = ipToInt(srcRaw);
+        if (srcInt !== null) {
+          srcTag = getTags(srcInt);
+          if (!srcTag) unmatchedInts.add(srcInt);
         }
-        if (dstIpRaw) {
-          dstInt = ipToIntFast(dstIpRaw);
-          if (dstInt !== null) {
-            const tags = getTagsForIpFast(dstInt);
-            dstTag = tags.join(", ");
-            if (dstTag === "") unmatchedIpInts.add(dstInt);
-          }
-        }
-        const enriched = { ...row };
-        enriched["Source_Tag"] = srcTag;
-        enriched["Destination_Tag"] = dstTag;
-        taggedRows.push(enriched);
       }
-      processed = end;
-      const pct = 5 + Math.floor((processed / totalRows) * 70);
-      setProgress(pct);
-      await new Promise(r => setTimeout(r, 0));
+      if (dstRaw) {
+        dstInt = ipToInt(dstRaw);
+        if (dstInt !== null) {
+          dstTag = getTags(dstInt);
+          if (!dstTag) unmatchedInts.add(dstInt);
+        }
+      }
+      const enriched = { ...row, Source_Tag: srcTag, Destination_Tag: dstTag };
+      newTagged.push(enriched);
+      if (i % 5000 === 0) {
+        setProgress(10 + Math.floor((i/total)*70));
+        await new Promise(r => setTimeout(r, 0));
+      }
     }
-
-    setProgress(80);
-    const unmatchedArray = Array.from(unmatchedIpInts);
-    const summary = summarizeToCidrs(unmatchedArray);
-    summarizedResult = summary;
-    taggedDataset = taggedRows;
-    currentSort = { col: null, asc: true };
-    currentPage = 1;
+    setProgress(85);
+    taggedRows = newTagged;
+    // Summarize unmatched IPs
+    const unmatchedArray = Array.from(unmatchedInts);
+    const summary = summarizeCidrs(unmatchedArray);
+    window.summaryResult = summary;
     setProgress(95);
     renderDashboard();
     setProgress(100);
-    setTimeout(() => setProgress(null), 300);
+    setTimeout(() => setProgress(null), 500);
   }
 
-  // ---------- Paginated & Sorted Table Rendering ----------
+  // Simple CIDR summarization for unmatched IPs
+  function summarizeCidrs(ipInts) {
+    if (!ipInts.length) return { blocks: [], singles: [] };
+    const sorted = [...new Set(ipInts)].sort((a,b)=>a-b);
+    const blocks = [];
+    const singles = [];
+    let i = 0;
+    while (i < sorted.length) {
+      let best = null;
+      for (let p=30; p>=24; p--) {
+        const step = 1 << (32-p);
+        const base = sorted[i] & (0xFFFFFFFF << (32-p));
+        const end = base + step - 1;
+        let count = 0;
+        for (let j=i; j<sorted.length && sorted[j]<=end; j++) count++;
+        if (count >= 2 && (!best || count > best.count)) best = { prefix: p, base, count, endIdx: i+count-1 };
+      }
+      if (best && best.count >= 2) {
+        blocks.push({ cidr: `${intToIp(best.base)}/${best.prefix}`, count: best.count });
+        i = best.endIdx + 1;
+      } else {
+        singles.push(intToIp(sorted[i]));
+        i++;
+      }
+    }
+    return { blocks, singles };
+  }
+
+  // ---------- Dashboard Rendering (with pagination) ----------
   function renderDashboard() {
-    if (!taggedDataset.length) return;
-    const headers = paWorkbookData.headers;
+    if (!taggedRows.length) return;
+    document.getElementById("resultsContainer").classList.remove("hidden");
+    const headers = paData.headers;
     const displayHeaders = [...headers, "Source_Tag", "Destination_Tag"];
     
-    // Sort if needed
-    let sortedData = [...taggedDataset];
+    let sorted = [...taggedRows];
     if (currentSort.col) {
-      sortedData.sort((a,b) => {
+      sorted.sort((a,b) => {
         let av = a[currentSort.col] ?? "";
         let bv = b[currentSort.col] ?? "";
-        if (currentSort.col === "Source_Tag" || currentSort.col === "Destination_Tag") {
-          av = av || "";
-          bv = bv || "";
-        }
-        if (typeof av === "number" && typeof bv === "number") {
-          return currentSort.asc ? av - bv : bv - av;
-        }
+        if (typeof av === "number" && typeof bv === "number") return currentSort.asc ? av-bv : bv-av;
         av = String(av).toLowerCase();
         bv = String(bv).toLowerCase();
         if (av < bv) return currentSort.asc ? -1 : 1;
@@ -664,34 +426,27 @@
         return 0;
       });
     }
-
-    const totalRows = sortedData.length;
-    const totalPages = Math.ceil(totalRows / rowsPerPage);
-    if (currentPage > totalPages) currentPage = totalPages || 1;
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = Math.min(start + rowsPerPage, totalRows);
-    const pageRows = sortedData.slice(start, end);
-
+    const total = sorted.length;
+    const pages = Math.ceil(total / rowsPerPage);
+    if (currentPage > pages) currentPage = pages || 1;
+    const start = (currentPage-1)*rowsPerPage;
+    const pageRows = sorted.slice(start, start+rowsPerPage);
+    
     // Stats
-    let rowsWithTags = 0;
-    for (let r of taggedDataset) {
-      if (r.Source_Tag || r.Destination_Tag) rowsWithTags++;
-    }
-    const unmatchedIpCount = summarizedResult.summarizedBlocks.reduce((acc,b) => acc + b.ips.length, 0) + summarizedResult.individualIps.length;
+    let rowsWithTags = taggedRows.filter(r => r.Source_Tag || r.Destination_Tag).length;
     document.getElementById("statsPanel").innerHTML = `
-      <div class="stat-card"><div class="number">${totalRows.toLocaleString()}</div><div class="label">Total Log Rows</div></div>
-      <div class="stat-card"><div class="number">${rowsWithTags.toLocaleString()}</div><div class="label">Rows with Tags</div></div>
-      <div class="stat-card"><div class="number">${unmatchedIpCount.toLocaleString()}</div><div class="label">Unmatched IPs</div></div>
-      <div class="stat-card"><div class="number">${summarizedResult.summarizedBlocks.length}</div><div class="label">Summarized Blocks</div></div>
+      <div class="stat-card"><div class="number">${total.toLocaleString()}</div><div class="label">Total Rows</div></div>
+      <div class="stat-card"><div class="number">${rowsWithTags.toLocaleString()}</div><div class="label">Tagged Rows</div></div>
+      <div class="stat-card"><div class="number">${window.summaryResult?.blocks.length || 0}</div><div class="label">Summarized Blocks</div></div>
+      <div class="stat-card"><div class="number">${window.summaryResult?.singles.length || 0}</div><div class="label">Unmatched Singles</div></div>
     `;
-
+    
     // Table header
-    const thead = document.getElementById("tableHeader");
-    thead.innerHTML = `<tr>${displayHeaders.map(h => `<th onclick="sortTable('${h.replace(/'/g, "\\'")}')">${h} ${currentSort.col === h ? (currentSort.asc ? '↑' : '↓') : ''}</th>`).join('')}</tr>`;
-
-    // Table body (using fragment for speed)
+    document.getElementById("tableHeader").innerHTML = `<tr>${displayHeaders.map(h => `<th onclick="sortTable('${h.replace(/'/g,"\\'")}')">${h} ${currentSort.col===h ? (currentSort.asc?'↑':'↓') : ''}</th>`).join('')}</tr>`;
+    
+    // Table body
     const tbody = document.getElementById("tableBody");
-    const fragment = document.createDocumentFragment();
+    tbody.innerHTML = "";
     for (let row of pageRows) {
       const tr = document.createElement("tr");
       for (let h of displayHeaders) {
@@ -699,91 +454,58 @@
         let val = row[h] !== undefined ? row[h] : "";
         if (h === "Source_Tag" || h === "Destination_Tag") {
           if (!val) val = "—";
-          else if (val.includes("Hardcoded")) {
-            const span = document.createElement("span");
-            span.className = "badge badge-hardcoded";
-            span.textContent = val;
-            td.appendChild(span);
-          } else {
-            const span = document.createElement("span");
-            span.className = "badge badge-psg";
-            span.textContent = val;
-            td.appendChild(span);
-          }
-        } else {
-          td.textContent = val;
-        }
+          else if (val.includes("Hardcoded")) td.innerHTML = `<span class="badge badge-hardcoded">${val}</span>`;
+          else td.innerHTML = `<span class="badge badge-psg">${val}</span>`;
+        } else td.textContent = val;
         tr.appendChild(td);
       }
-      fragment.appendChild(tr);
+      tbody.appendChild(tr);
     }
-    tbody.innerHTML = "";
-    tbody.appendChild(fragment);
-
-    // Pagination controls
-    const paginationDiv = document.getElementById("paginationControls");
-    paginationDiv.innerHTML = `
-      <button id="firstPageBtn" ${currentPage === 1 ? 'disabled' : ''}>⏮ First</button>
-      <button id="prevPageBtn" ${currentPage === 1 ? 'disabled' : ''}>◀ Prev</button>
-      <span>Page ${currentPage} of ${totalPages || 1}</span>
-      <button id="nextPageBtn" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>Next ▶</button>
-      <button id="lastPageBtn" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>Last ⏭</button>
-      <select id="rowsPerPageSelect">
-        <option value="200" ${rowsPerPage === 200 ? 'selected' : ''}>200 rows</option>
-        <option value="500" ${rowsPerPage === 500 ? 'selected' : ''}>500 rows</option>
-        <option value="1000" ${rowsPerPage === 1000 ? 'selected' : ''}>1000 rows</option>
-        <option value="2000" ${rowsPerPage === 2000 ? 'selected' : ''}>2000 rows</option>
-      </select>
+    
+    // Pagination
+    document.getElementById("paginationControls").innerHTML = `
+      <button ${currentPage===1?'disabled':''} onclick="changePage(1)">⏮ First</button>
+      <button ${currentPage===1?'disabled':''} onclick="changePage(${currentPage-1})">◀ Prev</button>
+      <span>Page ${currentPage} of ${pages||1}</span>
+      <button ${currentPage===pages||pages===0?'disabled':''} onclick="changePage(${currentPage+1})">Next ▶</button>
+      <button ${currentPage===pages||pages===0?'disabled':''} onclick="changePage(${pages})">Last ⏭</button>
+      <select id="rowsPerPageSelect" onchange="changeRowsPerPage(this.value)">
+        <option ${rowsPerPage===200?'selected':''} value="200">200</option>
+        <option ${rowsPerPage===500?'selected':''} value="500">500</option>
+        <option ${rowsPerPage===1000?'selected':''} value="1000">1000</option>
+      </select> rows
     `;
-    document.getElementById("firstPageBtn")?.addEventListener("click", () => { currentPage = 1; renderDashboard(); });
-    document.getElementById("prevPageBtn")?.addEventListener("click", () => { if (currentPage > 1) { currentPage--; renderDashboard(); } });
-    document.getElementById("nextPageBtn")?.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; renderDashboard(); } });
-    document.getElementById("lastPageBtn")?.addEventListener("click", () => { currentPage = totalPages; renderDashboard(); });
-    document.getElementById("rowsPerPageSelect")?.addEventListener("change", (e) => { rowsPerPage = parseInt(e.target.value, 10); currentPage = 1; renderDashboard(); });
-
-    // Unmatched panel
-    const summaryBlocksDiv = document.getElementById("summaryBlocks");
-    const individualDiv = document.getElementById("individualIps");
-    if (summarizedResult.summarizedBlocks.length) {
-      summaryBlocksDiv.innerHTML = summarizedResult.summarizedBlocks.map(b => `<div class="cidr-tag">${b.cidr} (${b.ips.length} IPs)</div>`).join('');
-    } else summaryBlocksDiv.innerHTML = "— No summarizable blocks —";
-    if (summarizedResult.individualIps.length) {
-      individualDiv.innerHTML = summarizedResult.individualIps.map(ip => `<div class="cidr-tag">${ip}</div>`).join('');
-    } else individualDiv.innerHTML = "— No individual unmatched IPs —";
   }
 
-  // ---------- Export CSV (full dataset) ----------
-  function exportFullCsv() {
-    if (!taggedDataset.length) return;
-    const originalHeaders = paWorkbookData.headers;
-    const exportHeaders = [...originalHeaders, "Source_Tag", "Destination_Tag"];
-    const rows = [exportHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(",")];
-    for (let row of taggedDataset) {
-      const values = exportHeaders.map(h => {
+  window.changePage = (page) => { currentPage = page; renderDashboard(); };
+  window.changeRowsPerPage = (val) => { rowsPerPage = parseInt(val,10); currentPage = 1; renderDashboard(); };
+  window.sortTable = (col) => {
+    if (currentSort.col === col) currentSort.asc = !currentSort.asc;
+    else { currentSort.col = col; currentSort.asc = true; }
+    currentPage = 1;
+    renderDashboard();
+  };
+
+  function exportCSV() {
+    if (!taggedRows.length) return;
+    const headers = [...paData.headers, "Source_Tag", "Destination_Tag"];
+    const rows = [headers.map(h => `"${h.replace(/"/g,'""')}"`).join(",")];
+    for (let row of taggedRows) {
+      rows.push(headers.map(h => {
         let val = row[h] !== undefined ? row[h] : "";
-        if (typeof val === "string") val = val.replace(/"/g, '""');
+        val = String(val).replace(/"/g,'""');
         return `"${val}"`;
-      });
-      rows.push(values.join(","));
+      }).join(","));
     }
-    rows.push("", "\"=== UNMATCHED SUMMARY ===\"", "");
-    rows.push("\"Summarized CIDR Blocks\",\"IP Count\"");
-    if (summarizedResult && summarizedResult.summarizedBlocks.length) {
-      summarizedResult.summarizedBlocks.forEach(b => rows.push(`"${b.cidr}",${b.ips.length}`));
-    } else rows.push("\"None\",0");
-    rows.push("", "\"Individual IPs (no summarization)\"");
-    if (summarizedResult && summarizedResult.individualIps.length) {
-      summarizedResult.individualIps.forEach(ip => rows.push(`"${ip}"`));
-    } else rows.push("\"None\"");
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "pa_analyzer_export.csv";
-    link.click();
-    URL.revokeObjectURL(link.href);
+    const blob = new Blob([rows.join("\n")], {type:"text/csv"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pa_analyzer_export.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
-  // ---------- UI Helpers ----------
+  // UI helpers
   function setProgress(pct) {
     const wrap = document.getElementById("progressWrap");
     const bar = document.getElementById("progressBar");
@@ -792,90 +514,70 @@
     bar.style.width = pct + "%";
   }
   function showError(msg) {
-    const errDiv = document.getElementById("errorBox");
-    if (!msg) { errDiv.classList.add("hidden"); return; }
-    errDiv.classList.remove("hidden");
-    errDiv.innerHTML = `⚠️ ${msg}`;
+    const err = document.getElementById("errorBox");
+    if (!msg) { err.classList.add("hidden"); return; }
+    err.classList.remove("hidden");
+    err.innerText = msg;
   }
 
   // File handlers
   function setupDropzone(dropId, inputId, statusId, isPa) {
     const drop = document.getElementById(dropId);
     const input = document.getElementById(inputId);
-    const statusDiv = document.getElementById(statusId);
+    const status = document.getElementById(statusId);
     drop.addEventListener("click", () => input.click());
-    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("drag"); });
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
     drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
-    drop.addEventListener("drop", async (e) => {
+    drop.addEventListener("drop", async e => {
       e.preventDefault();
       drop.classList.remove("drag");
       const file = e.dataTransfer.files[0];
-      if (file) await handleFile(file, isPa, statusDiv, drop);
+      if (file) await handleFile(file, isPa, status);
     });
     input.addEventListener("change", async () => {
-      if (input.files.length) await handleFile(input.files[0], isPa, statusDiv, drop);
+      if (input.files.length) await handleFile(input.files[0], isPa, status);
       input.value = "";
     });
   }
-  async function handleFile(file, isPa, statusDiv, dropElement) {
-    if (!file) return;
-    statusDiv.innerHTML = `📄 ${file.name} (loading...)`;
-    statusDiv.classList.remove("success", "error");
+  async function handleFile(file, isPa, statusEl) {
+    statusEl.innerHTML = `📄 ${file.name} (loading...)`;
+    statusEl.classList.remove("success","error");
     try {
       if (isPa) {
-        const parsed = await parsePaLogFast(file);
-        paWorkbookData = parsed;
-        statusDiv.innerHTML = `✅ ${file.name} · ${parsed.rows.length} rows, columns: ${parsed.headers.slice(0,5).join(", ")}...`;
-        statusDiv.classList.add("success");
+        paData = await loadPaLog(file);
+        statusEl.innerHTML = `✅ ${file.name} · ${paData.rows.length} rows, columns: ${paData.headers.slice(0,3).join(", ")}...`;
+        statusEl.classList.add("success");
       } else {
-        const subnets = await parsePsgSubnetsFast(file);
-        psgSubnetList = subnets;
-        statusDiv.innerHTML = `✅ ${file.name} · loaded ${subnets.length} CIDRs from ${[...new Set(subnets.map(s=>s.sheetName))].join(", ")}`;
-        statusDiv.classList.add("success");
+        psgSubnets = await loadPsgSubnets(file);
+        statusEl.innerHTML = `✅ ${file.name} · ${psgSubnets.length} CIDRs loaded from ${[...new Set(psgSubnets.map(s=>s.sheetName))].join(", ")}`;
+        statusEl.classList.add("success");
       }
-      dropElement.style.borderColor = "#00e676";
-      setTimeout(() => dropElement.style.borderColor = "", 800);
-    } catch (err) {
-      statusDiv.innerHTML = `❌ Error: ${err.message}`;
-      statusDiv.classList.add("error");
+    } catch(err) {
+      statusEl.innerHTML = `❌ ${err.message || err}`;
+      statusEl.classList.add("error");
       console.error(err);
     } finally {
-      updateAnalyzeButton();
+      document.getElementById("analyzeBtn").disabled = !(paData && psgSubnets.length);
     }
   }
-  function updateAnalyzeButton() {
-    const btn = document.getElementById("analyzeBtn");
-    btn.disabled = !(paWorkbookData && psgSubnetList.length);
-  }
   function clearAll() {
-    paWorkbookData = null;
-    psgSubnetList = [];
-    taggedDataset = [];
-    summarizedResult = null;
-    ipMemo.clear();
+    paData = null;
+    psgSubnets = [];
+    taggedRows = [];
     document.getElementById("paStatus").innerHTML = "No file loaded";
     document.getElementById("psgStatus").innerHTML = "No file loaded";
     document.getElementById("resultsContainer").classList.add("hidden");
-    updateAnalyzeButton();
+    document.getElementById("analyzeBtn").disabled = true;
     showError(null);
-    document.querySelectorAll(".file-dropzone").forEach(dz => dz.style.borderColor = "");
+    setProgress(null);
   }
 
-  // Sorting global
-  window.sortTable = (col) => {
-    if (currentSort.col === col) currentSort.asc = !currentSort.asc;
-    else { currentSort.col = col; currentSort.asc = true; }
-    currentPage = 1;
-    renderDashboard();
-  };
-
   // Event binding
-  setupDropzone("paDropzone", "paFileInput", "paStatus", true);
-  setupDropzone("psgDropzone", "psgFileInput", "psgStatus", false);
+  setupDropzone("paDropzone","paFileInput","paStatus",true);
+  setupDropzone("psgDropzone","psgFileInput","psgStatus",false);
   document.getElementById("analyzeBtn").addEventListener("click", runAnalysis);
   document.getElementById("clearBtn").addEventListener("click", clearAll);
-  document.getElementById("exportCsvBtn").addEventListener("click", exportFullCsv);
-  updateAnalyzeButton();
+  document.getElementById("exportCsvBtn").addEventListener("click", exportCSV);
 </script>
 </body>
 </html>
