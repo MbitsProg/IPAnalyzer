@@ -4,104 +4,137 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PA Traffic Log Analyzer</title>
-  <!-- SheetJS for Excel parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
-      --bg: #f4f7f9; --card: #ffffff; --primary: #2563eb; --primary-hover: #1d4ed8;
-      --text: #1f2937; --text-muted: #6b7280; --border: #e5e7eb; --success: #10b981;
-      --warning: #f59e0b; --danger: #ef4444; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --bg: #f8fafc; --card: #ffffff; --primary: #2563eb; --primary-hover: #1d4ed8;
+      --text: #0f172a; --text-muted: #64748b; --border: #e2e8f0; --success: #10b981;
+      --col-src-bg: #e0f2fe; --col-src-hover: #bae6fd;
+      --col-dst-bg: #dcfce7; --col-dst-hover: #bbf7d0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.5; }
-    .container { max-width: 1400px; margin: 0 auto; }
-    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
-    .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
-    .card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.5rem; }
-    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+    body { background: var(--bg); color: var(--text); padding: 1.5rem; line-height: 1.5; }
+    .container { max-width: 1500px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .card { background: var(--card); border-radius: 10px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid var(--border); }
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
     @media (max-width: 768px) { .upload-grid { grid-template-columns: 1fr; } }
-    .file-input-wrap { border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; transition: 0.2s; cursor: pointer; background: white; }
-    .file-input-wrap:hover { border-color: var(--primary); background: #f8fafc; }
-    .file-input-wrap input { display: none; }
-    .file-input-wrap label { cursor: pointer; color: var(--primary); font-weight: 500; display: inline-block; margin-top: 0.5rem; }
-    .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+    .file-box { position: relative; border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; background: white; transition: 0.2s; }
+    .file-box:hover { border-color: var(--primary); background: #f8fafc; }
+    .file-box input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .file-box label { pointer-events: none; color: var(--primary); font-weight: 500; display: inline-block; margin-top: 0.5rem; }
+    .file-box small { display: block; margin-top: 0.25rem; color: var(--text-muted); }
+    .file-status { margin-top: 0.5rem; font-size: 0.85rem; color: var(--success); font-weight: 500; display: none; }
+
+    .btn { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 500; cursor: pointer; transition: 0.2s; }
     .btn:hover:not(:disabled) { background: var(--primary-hover); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: #64748b; }
-    .btn-secondary:hover:not(:disabled) { background: #475569; }
-    .status { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; display: none; }
-    .status.error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
-    .status.success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
-    .status.loading { background: #eff6ff; color: var(--primary); border: 1px solid #bfdbfe; }
-    .dashboard { display: none; margin-top: 1.5rem; }
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-    .summary-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
-    .summary-box h3 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-muted); }
-    .summary-list { max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; color: var(--text); }
-    .summary-list div { padding: 0.25rem 0; border-bottom: 1px solid #e5e7eb; }
-    #filter-panel { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem; }
-    .tag-filter-btn { padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--border); background: white; color: var(--text-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; user-select: none; }
-    .tag-filter-btn:hover { border-color: var(--primary); color: var(--primary); }
-    .tag-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-    .tag-filter-btn.all-btn { font-weight: 600; border-color: #cbd5e1; }
-    .tag-filter-btn.all-btn.active { background: #334155; border-color: #334155; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+    .status { margin-top: 0.75rem; padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; display: none; }
+    .status.error { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+    .status.success { background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0; }
+    .status.loading { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+    @media (max-width: 768px) { .summary-grid { grid-template-columns: 1fr; } }
+    .summary-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; max-height: 250px; overflow-y: auto; }
+    .summary-box h3 { font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-muted); }
+    .summary-box code { display: block; padding: 0.2rem 0.4rem; background: white; border: 1px solid var(--border); border-radius: 4px; margin: 0.2rem 0; font-size: 0.85rem; word-break: break-all; }
+    .rule-note { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; font-style: italic; }
+
+    #filter-panel { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .filter-btn { padding: 0.35rem 0.75rem; border-radius: 999px; border: 1px solid var(--border); background: white; color: var(--text-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; user-select: none; }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .filter-btn.all-btn { font-weight: 600; border-color: #cbd5e1; background: #f1f5f9; }
+    .filter-btn.all-btn.active { background: #334155; color: white; border-color: #334155; }
+
+    .pagination-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .pagination-controls { display: flex; align-items: center; gap: 0.5rem; }
+    .page-select { padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: white; }
+    .page-info { color: var(--text-muted); font-size: 0.85rem; }
+
     .table-wrap { overflow-x: auto; max-height: 600px; border: 1px solid var(--border); border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-    th { background: #f8fafc; position: sticky; top: 0; cursor: pointer; user-select: none; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; white-space: nowrap; border-spacing: 0; }
+    th, td { padding: 0.65rem 1rem; text-align: left; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+    th:last-child, td:last-child { border-right: none; }
+    th { background: #f1f5f9; position: sticky; top: 0; cursor: pointer; user-select: none; font-weight: 600; }
     th:hover { background: #e2e8f0; }
-    tr:hover { background: #f8fafc; }
-    .tag { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; margin: 2px; cursor: pointer; transition: 0.2s; }
-    .tag:hover { transform: scale(1.05); }
+    tr:hover td { background: #f8fafc; }
+    .col-source { background: var(--col-src-bg) !important; }
+    .col-dest { background: var(--col-dst-bg) !important; }
+    tr:hover .col-source { background: var(--col-src-hover) !important; }
+    tr:hover .col-dest { background: var(--col-dst-hover) !important; }
+
+    .tag-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; margin: 2px; }
     .tag-hard { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
     .tag-psg { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-    .tag-none { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-    .actions { display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
-    .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; vertical-align: middle; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .filter-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-    .file-success { color: var(--success) !important; font-weight: 500; }
+    .tag-unmatched { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .tag-invalid { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+    .actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔍 Palo Alto Traffic Log Analyzer</h1>
-    <p class="subtitle">Upload logs & PSG subnets → Auto-tag → Filter by tags → Export CSV</p>
+    <h1>🔍 PA Traffic Log Analyzer</h1>
+    <p class="subtitle">Cross-reference logs vs known & PSG subnets → Tag → Summarize unmatched → Filter & Export</p>
 
     <div class="card">
       <div class="upload-grid">
-        <div class="file-input-wrap" id="pa-drop">
-          <label for="pa-file">📁 Select PA Traffic Log Excel<br><small>Must contain "Source address" & "Destination address"</small></label>
-          <input type="file" id="pa-file" accept=".xlsx,.xls,.csv">
-          <div id="pa-name" style="margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;"></div>
+        <div class="file-box">
+          <label for="pa-file">📁 Select PA Traffic Log<br><small>Supports .xlsx, .xls, .csv, or any filename</small></label>
+          <input type="file" id="pa-file">
+          <div id="pa-status" class="file-status"></div>
         </div>
-        <div class="file-input-wrap" id="psg-drop">
-          <label for="psg-file">📁 Select PSG Subnets Excel<br><small>4 sheets • Col B: VRF • Col C: Subnet</small></label>
-          <input type="file" id="psg-file" accept=".xlsx,.xls,.csv">
-          <div id="psg-name" style="margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;"></div>
+        <div class="file-box">
+          <label for="psg-file">📁 Select PSG Subnets Excel<br><small>Multi-sheet • Column C = CIDR</small></label>
+          <input type="file" id="psg-file">
+          <div id="psg-status" class="file-status"></div>
         </div>
       </div>
       <button class="btn" id="process-btn" disabled>⚙️ Process Files</button>
-      <div id="status" class="status"></div>
+      <div id="main-status" class="status"></div>
     </div>
 
-    <div id="dashboard" class="dashboard">
+    <div id="dashboard" class="hidden">
       <div class="summary-grid">
         <div class="summary-box">
-          <h3>📊 Summarized Unmatched (/24–/30)</h3>
-          <div id="cidr-list" class="summary-list">None</div>
+          <h3>📦 Summarized Unmatched CIDRs</h3>
+          <p class="rule-note">/24 (≥32) → /25 (≥16) → /28 (≥8) → /29 (≥4) → /30 (≥2)</p>
+          <div id="cidr-summary"></div>
         </div>
         <div class="summary-box">
-          <h3>📍 Individual Unmatched IPs</h3>
-          <div id="ip-list" class="summary-list">None</div>
+          <h3>📌 Individual Unmatched IPs</h3>
+          <p class="rule-note">Remaining IPs that didn't meet density thresholds</p>
+          <div id="ip-summary"></div>
         </div>
       </div>
 
       <div class="card">
         <h3>🏷️ Interactive Tag Dashboard</h3>
-        <p class="filter-info">Click tags below to filter the table. Click again to deselect. "All" shows every row.</p>
         <div id="filter-panel"></div>
         
+        <div class="pagination-bar">
+          <div class="page-info" id="page-info">Loading...</div>
+          <div class="pagination-controls">
+            <button class="btn btn-outline btn-sm" id="prev-page" disabled>◀ Prev</button>
+            <select class="page-select" id="rows-per-page">
+              <option value="300">300 / page</option>
+              <option value="500" selected>500 / page</option>
+              <option value="1000">1000 / page</option>
+            </select>
+            <button class="btn btn-outline btn-sm" id="next-page">Next ▶</button>
+          </div>
+        </div>
+
         <div class="table-wrap">
           <table id="results-table">
             <thead><tr id="table-head"></tr></thead>
@@ -109,205 +142,204 @@
           </table>
         </div>
         <div class="actions">
-          <button class="btn" id="export-btn">💾 Export Full Tagged Log & Summary (CSV)</button>
-          <button class="btn btn-secondary" id="clear-btn">🗑️ Clear & Reset</button>
+          <button class="btn" id="export-btn">💾 Export All Filtered Rows (CSV)</button>
+          <button class="btn btn-outline" id="reset-btn">🔄 Reset</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // === CONFIG ===
+    // === CONFIGURATION ===
     const HARDCODED_SUBNETS = [
-      "10.109.187.0/27", "10.109.34.0/24", "10.109.66.0/24",
-      "10.109.65.0/24", "10.109.77.64/29", "10.118.44.0/25", "10.109.186.0/24"
+      { cidr: "10.109.187.0/27", tag: "Netbackup" },
+      { cidr: "10.109.34.0/24", tag: "NBU" },
+      { cidr: "10.109.66.0/24", tag: "Gateway for AGW Service" },
+      { cidr: "10.109.65.0/24", tag: "Gateway for AGW Software O&M" },
+      { cidr: "10.109.77.64/29", tag: "CIQ_Prod" },
+      { cidr: "10.118.44.0/25", tag: "Exalogic_Prod" },
+      { cidr: "10.109.186.0/24", tag: "UDS ISILON NMP" }
+    ];
+
+    const SUMMARIZATION_RULES = [
+      { prefix: 24, threshold: 32 },
+      { prefix: 25, threshold: 16 },
+      { prefix: 28, threshold: 8 },
+      { prefix: 29, threshold: 4 },
+      { prefix: 30, threshold: 2 }
     ];
 
     // === STATE ===
-    let paData = [];
-    let psgSubnets = [];
     let processedData = [];
+    let currentFilteredData = [];
     let summaryData = { cidrs: [], individuals: [] };
     let activeFilters = new Set();
     let uniqueTags = new Set();
+    let sortCol = null, sortAsc = true;
+    let colIndices = { src: -1, dst: -1 };
+    let currentPage = 1;
+    let rowsPerPage = 500;
 
     // === DOM ===
     const paInput = document.getElementById('pa-file');
     const psgInput = document.getElementById('psg-file');
     const processBtn = document.getElementById('process-btn');
     const exportBtn = document.getElementById('export-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const statusEl = document.getElementById('status');
+    const resetBtn = document.getElementById('reset-btn');
+    const mainStatus = document.getElementById('main-status');
     const dashboardEl = document.getElementById('dashboard');
     const filterPanel = document.getElementById('filter-panel');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const pageSizeSelect = document.getElementById('rows-per-page');
+    const pageInfo = document.getElementById('page-info');
 
-    // === UTILS ===
+    // === UTILITIES ===
     const ipRegex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    function isValidIP(ip) {
-      if (!ip || !ipRegex.test(ip)) return false;
-      return ip.split('.').every(o => { const n = parseInt(o,10); return n >= 0 && n <= 255; });
-    }
-    function ipToLong(ip) {
-      return ip.split('.').reduce((acc, o) => (acc << 8) + parseInt(o, 10), 0) >>> 0;
-    }
-    function longToIp(long) {
-      return [long >>> 24, (long >> 16) & 255, (long >> 8) & 255, long & 255].join('.');
-    }
+    function isValidIPv4(ip) { if (!ip || !ipRegex.test(ip)) return false; return ip.split('.').every(o => parseInt(o, 10) <= 255); }
+    function ipToLong(ip) { return ip.split('.').reduce((acc, o) => (acc << 8) + parseInt(o, 10), 0) >>> 0; }
+    function longToIp(l) { return [l >>> 24, (l >> 16) & 255, (l >> 8) & 255, l & 255].join('.'); }
     function parseCIDR(cidr) {
-      if (!cidr) return null;
       const parts = cidr.split('/');
       if (parts.length !== 2) return null;
-      const [ip, prefix] = parts;
-      const p = parseInt(prefix, 10);
-      if (isNaN(p) || p < 0 || p > 32) return null;
-      const mask = p === 0 ? 0 : (~0 << (32 - p)) >>> 0;
-      return { network: ipToLong(ip) & mask, broadcast: (ipToLong(ip) & mask) | (~mask >>> 0) };
+      const prefix = parseInt(parts[1], 10);
+      if (isNaN(prefix) || prefix < 0 || prefix > 32) return null;
+      const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
+      return { network: ipToLong(parts[0]) & mask, broadcast: (ipToLong(parts[0]) & mask) | (~mask >>> 0) };
     }
-    function isIpInCidr(ip, cidr) {
-      const range = parseCIDR(cidr);
-      if (!range) return false;
-      const long = ipToLong(ip);
-      return long >= range.network && long <= range.broadcast;
+    function ipInCidr(ip, cidr) {
+      const r = parseCIDR(cidr);
+      if (!r) return false;
+      return ipToLong(ip) >= r.network && ipToLong(ip) <= r.broadcast;
     }
 
-    // === SUMMARIZER ===
-    function summarizeIPs(ipStrings) {
-      const longs = [...new Set(ipStrings.filter(isValidIP).map(ipToLong))].sort((a,b)=>a-b);
-      const cidrs = [], individuals = [];
-      if (!longs.length) return { cidrs, individuals };
-
-      const ranges = [];
-      let start = longs[0], end = longs[0];
-      for (let i = 1; i < longs.length; i++) {
-        if (longs[i] === end + 1) end = longs[i];
-        else { ranges.push([start, end]); start = end = longs[i]; }
-      }
-      ranges.push([start, end]);
-
-      for (const [s, e] of ranges) {
-        let cur = s;
-        while (cur <= e) {
-          let size = 1, prefix = 32;
-          while (prefix > 24) {
-            const nextSize = size * 2;
-            const aligned = (cur & (nextSize - 1)) === 0;
-            const fits = cur + nextSize - 1 <= e;
-            if (aligned && fits) { size = nextSize; prefix--; }
-            else break;
-          }
-          if (prefix > 30) {
-            individuals.push(longToIp(cur));
-            cur++;
-          } else {
-            cidrs.push(`${longToIp(cur)}/${prefix}`);
-            cur += size;
+    // === SUMMARIZATION ===
+    function summarizeUnmatched(ipArray) {
+      const uniqueIPs = [...new Set(ipArray.filter(isValidIPv4))];
+      const claimed = new Set();
+      const cidrs = [];
+      for (const rule of SUMMARIZATION_RULES) {
+        const mask = rule.prefix === 0 ? 0 : (~0 << (32 - rule.prefix)) >>> 0;
+        const groups = {};
+        uniqueIPs.forEach(ip => {
+          if (claimed.has(ip)) return;
+          const net = (ipToLong(ip) & mask) >>> 0;
+          if (!groups[net]) groups[net] = [];
+          groups[net].push(ip);
+        });
+        for (const [net, ips] of Object.entries(groups)) {
+          if (ips.length >= rule.threshold) {
+            cidrs.push(`${longToIp(parseInt(net))}/${rule.prefix}`);
+            ips.forEach(i => claimed.add(i));
           }
         }
       }
-      return { cidrs: cidrs.sort(), individuals: individuals.sort() };
+      const individuals = uniqueIPs.filter(ip => !claimed.has(ip)).sort((a, b) => ipToLong(a) - ipToLong(b));
+      cidrs.sort((a, b) => ipToLong(a.split('/')[0]) - ipToLong(b.split('/')[0]));
+      return { cidrs, individuals };
     }
 
-    // === TAGGING LOGIC ===
-    function getTags(ip, psgList) {
-      if (!isValidIP(ip)) return [];
-      const matches = [];
-      for (const cidr of HARDCODED_SUBNETS) {
-        if (isIpInCidr(ip, cidr)) { matches.push("Hardcoded_Subnet"); break; }
-      }
-      if (matches.length === 0) {
-        for (const { cidr, sheet } of psgList) {
-          if (isIpInCidr(ip, cidr)) {
-            matches.push(`PSG_${sheet}`);
-            break;
-          }
-        }
-      }
-      return matches;
+    // === MATCHING ===
+    function getMatchInfo(ip, psgList) {
+      if (!isValidIPv4(ip)) return { tag: "Invalid", subnet: "-" };
+      for (const h of HARDCODED_SUBNETS) if (ipInCidr(ip, h.cidr)) return { tag: h.tag, subnet: h.cidr };
+      for (const p of psgList) if (ipInCidr(ip, p.cidr)) return { tag: p.sheet, subnet: p.cidr };
+      return { tag: "Unmatched", subnet: "-" };
     }
 
     // === UI HELPERS ===
     function setStatus(msg, type) {
-      statusEl.style.display = 'block';
-      statusEl.className = `status ${type}`;
-      statusEl.innerHTML = type === 'loading' ? `<span class="loader"></span>${msg}` : msg;
+      mainStatus.style.display = 'block';
+      mainStatus.className = `status ${type}`;
+      mainStatus.innerHTML = type === 'loading' ? `<span class="loader"></span>${msg}` : msg;
     }
-
-    function updateButtonState() {
-      processBtn.disabled = !(paInput.files.length && psgInput.files.length);
-    }
-
+    function updateBtnState() { processBtn.disabled = !(paInput.files.length && psgInput.files.length); }
+    
     function renderFilters() {
       filterPanel.innerHTML = '';
       const allBtn = document.createElement('button');
       allBtn.textContent = '🔘 All';
-      allBtn.className = `tag-filter-btn all-btn ${activeFilters.size === 0 ? 'active' : ''}`;
+      allBtn.className = `filter-btn all-btn ${activeFilters.size === 0 ? 'active' : ''}`;
       allBtn.onclick = () => { activeFilters.clear(); renderFilters(); applyFilters(); };
       filterPanel.appendChild(allBtn);
-
       Array.from(uniqueTags).sort().forEach(tag => {
         const btn = document.createElement('button');
         btn.textContent = tag;
-        btn.className = `tag-filter-btn ${activeFilters.has(tag) ? 'active' : ''}`;
-        btn.onclick = () => {
-          if (activeFilters.has(tag)) activeFilters.delete(tag);
-          else activeFilters.add(tag);
-          renderFilters(); applyFilters();
-        };
+        btn.className = `filter-btn ${activeFilters.has(tag) ? 'active' : ''}`;
+        btn.onclick = () => { activeFilters.has(tag) ? activeFilters.delete(tag) : activeFilters.add(tag); renderFilters(); applyFilters(); };
         filterPanel.appendChild(btn);
       });
     }
 
-    function applyFilters() {
-      const filtered = activeFilters.size === 0 
-        ? processedData 
-        : processedData.filter(row => {
-            const srcTags = (row['Source_Tag'] || '').split(', ').filter(Boolean);
-            const dstTags = (row['Destination_Tag'] || '').split(', ').filter(Boolean);
-            return [...srcTags, ...dstTags].some(t => activeFilters.has(t));
-          });
-      renderTable(filtered);
+    function updatePaginationUI() {
+      const total = currentFilteredData.length;
+      const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+      const start = total === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+      const end = Math.min(currentPage * rowsPerPage, total);
+      pageInfo.textContent = total === 0 ? '0 rows' : `Showing ${start}-${end} of ${total} rows`;
+      prevBtn.disabled = currentPage <= 1;
+      nextBtn.disabled = currentPage >= totalPages;
     }
 
-    let sortCol = null, sortAsc = true;
-    function renderTable(data) {
+    function applyFilters() {
+      currentFilteredData = activeFilters.size === 0 
+        ? processedData 
+        : processedData.filter(row => {
+            const tags = [row['Source_Tag'], row['Destination_Tag']].filter(Boolean);
+            return tags.some(t => activeFilters.has(t));
+          });
+      currentPage = 1;
+      renderTable();
+      updatePaginationUI();
+    }
+
+    function renderTable() {
       const thead = document.getElementById('table-head');
       const tbody = document.getElementById('table-body');
-      if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center; padding:2rem; color:var(--text-muted);">No matching rows</td></tr>';
+      tbody.innerHTML = '';
+      
+      if (currentFilteredData.length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td style="text-align:center; padding:2rem; color:var(--text-muted);">No matching rows</td></tr>';
         return;
       }
 
       if (thead.children.length === 0) {
-        const headers = Object.keys(data[0]);
-        thead.innerHTML = headers.map(h => `<th data-key="${h}">${h}</th>`).join('');
+        const headers = Object.keys(currentFilteredData[0]);
+        thead.innerHTML = headers.map((h, i) => {
+          const clean = h.toLowerCase().replace(/\s+/g, ' ');
+          if (clean === 'source address') colIndices.src = i;
+          if (clean === 'destination address') colIndices.dst = i;
+          const cls = colIndices.src === i ? 'col-source' : colIndices.dst === i ? 'col-dest' : '';
+          return `<th data-key="${h}" class="${cls}">${h.replace(/_/g, ' ')}</th>`;
+        }).join('');
         thead.querySelectorAll('th').forEach(th => {
           th.addEventListener('click', () => {
             const key = th.dataset.key;
-            if (sortCol === key) sortAsc = !sortAsc;
-            else { sortCol = key; sortAsc = true; }
-            data.sort((a,b) => {
+            if (sortCol === key) sortAsc = !sortAsc; else { sortCol = key; sortAsc = true; }
+            currentFilteredData.sort((a, b) => {
               const va = a[key] ?? '', vb = b[key] ?? '';
               if (va === vb) return 0;
               return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
             });
-            renderTable(data);
+            renderTable();
           });
         });
       }
 
+      const start = (currentPage - 1) * rowsPerPage;
+      const pageData = currentFilteredData.slice(start, start + rowsPerPage);
       const frag = document.createDocumentFragment();
-      data.forEach(row => {
+      pageData.forEach(row => {
         const tr = document.createElement('tr');
-        Object.keys(data[0]).forEach(h => {
+        Object.keys(currentFilteredData[0]).forEach((h, i) => {
           const td = document.createElement('td');
-          if (h.includes('Tag')) {
-            const tags = (row[h] || '').split(', ').filter(Boolean);
-            td.innerHTML = tags.length 
-              ? tags.map(t => {
-                  let cls = t.startsWith('Hardcoded') ? 'tag-hard' : t.startsWith('PSG') ? 'tag-psg' : 'tag-none';
-                  return `<span class="tag ${cls}" onclick="filterByTagClick('${t}')">${t}</span>`;
-                }).join('')
-              : '<span class="tag tag-none">Unmatched</span>';
+          if (colIndices.src === i) td.classList.add('col-source');
+          if (colIndices.dst === i) td.classList.add('col-dest');
+          if (h.endsWith('_Tag')) {
+            const val = row[h] || 'Unmatched';
+            let cls = val === 'Unmatched' ? 'tag-unmatched' : val === 'Invalid' ? 'tag-invalid' : (HARDCODED_SUBNETS.find(s=>s.tag===val) ? 'tag-hard' : 'tag-psg');
+            td.innerHTML = `<span class="tag-badge ${cls}" onclick="toggleTagFilter('${val}')">${val}</span>`;
           } else {
             td.textContent = row[h] ?? '';
           }
@@ -315,68 +347,51 @@
         });
         frag.appendChild(tr);
       });
-      tbody.innerHTML = '';
       tbody.appendChild(frag);
     }
 
-    window.filterByTagClick = function(tag) {
-      if (activeFilters.has(tag)) {
-        if (activeFilters.size === 1) activeFilters.clear();
-        else activeFilters.delete(tag);
-      } else {
-        activeFilters.add(tag);
-      }
+    window.toggleTagFilter = function(tag) {
+      if (tag === 'Unmatched' || tag === 'Invalid') return;
+      activeFilters.has(tag) ? activeFilters.delete(tag) : activeFilters.add(tag);
       renderFilters(); applyFilters();
     };
 
-    // === FILE HANDLERS ===
-    function handleFileSelect(inputEl, nameEl) {
+    function setupFileInput(inputEl, statusEl) {
       inputEl.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) {
-          nameEl.innerHTML = `✅ ${file.name} <span class="file-success">(Ready)</span>`;
-        } else {
-          nameEl.textContent = '';
-        }
-        updateButtonState();
+        if (file) { statusEl.textContent = `✅ Loaded: ${file.name}`; statusEl.style.display = 'block'; } 
+        else statusEl.style.display = 'none';
+        updateBtnState();
       });
     }
-    handleFileSelect(paInput, document.getElementById('pa-name'));
-    handleFileSelect(psgInput, document.getElementById('psg-name'));
-
-    // Click wrapper to trigger file input
-    document.getElementById('pa-drop').addEventListener('click', () => paInput.click());
-    document.getElementById('psg-drop').addEventListener('click', () => psgInput.click());
+    setupFileInput(paInput, document.getElementById('pa-status'));
+    setupFileInput(psgInput, document.getElementById('psg-status'));
 
     // === PROCESSING ===
     processBtn.addEventListener('click', async () => {
-      if (typeof XLSX === 'undefined') {
-        setStatus('❌ Excel library failed to load. Disable ad-blocker or check internet.', 'error');
-        return;
-      }
-      if (!paInput.files[0] || !psgInput.files[0]) return;
-      
-      setStatus('Parsing Excel files...', 'loading');
+      if (typeof XLSX === 'undefined') { setStatus('❌ Library failed to load. Check internet/ad-blocker.', 'error'); return; }
+      setStatus('Reading files...', 'loading');
       processBtn.disabled = true;
-      dashboardEl.style.display = 'none';
+      dashboardEl.classList.add('hidden');
+      colIndices = { src: -1, dst: -1 };
+      document.getElementById('table-head').innerHTML = '';
 
       try {
-        // Read PA Log
         const paBuf = await paInput.files[0].arrayBuffer();
         const paWb = XLSX.read(paBuf, { type: 'array' });
         const paRows = XLSX.utils.sheet_to_json(paWb.Sheets[paWb.SheetNames[0]], { defval: '' });
-        if (!paRows.length) throw new Error('PA Traffic Log appears empty or unreadable.');
+        if (!paRows.length) throw new Error('PA log is empty or unreadable.');
 
         const keys = Object.keys(paRows[0] || {});
-        const srcKey = keys.find(k => k.toLowerCase().includes('source address'));
-        const dstKey = keys.find(k => k.toLowerCase().includes('destination address'));
-        if (!srcKey || !dstKey) throw new Error('Missing "Source address" or "Destination address" column in PA log.');
+        const srcKey = keys.find(k => k.toLowerCase().replace(/\s+/g, ' ') === 'source address');
+        const dstKey = keys.find(k => k.toLowerCase().replace(/\s+/g, ' ') === 'destination address');
+        if (!srcKey || !dstKey) throw new Error('Missing "Source address" or "Destination address" column.');
 
-        // Read PSG Subnets
         const psgBuf = await psgInput.files[0].arrayBuffer();
         const psgWb = XLSX.read(psgBuf, { type: 'array' });
-        psgSubnets = [];
-        for (const sheetName of psgWb.SheetNames.slice(0, 4)) {
+        const psgSubnets = [];
+        const sheets = psgWb.SheetNames.length > 1 ? psgWb.SheetNames : psgWb.SheetNames.slice(0, 1);
+        for (const sheetName of sheets) {
           const sheet = psgWb.Sheets[sheetName];
           const json = XLSX.utils.sheet_to_json(sheet, { header: 'A', defval: '' });
           for (const row of json) {
@@ -384,77 +399,58 @@
             if (cidr && parseCIDR(cidr)) psgSubnets.push({ cidr, sheet: sheetName });
           }
         }
-        if (!psgSubnets.length) throw new Error('PSG Subnets file has no valid CIDRs in Column C across first 4 sheets.');
+        if (!psgSubnets.length) throw new Error('No valid CIDRs found in Column C of PSG file.');
 
         const unmatchedIPs = [];
-        uniqueTags.clear();
-        activeFilters.clear();
-
+        uniqueTags.clear(); activeFilters.clear(); sortCol = null; currentPage = 1;
         processedData = paRows.map(row => {
-          const src = String(row[srcKey] || '').trim();
-          const dst = String(row[dstKey] || '').trim();
-          
-          const srcTags = getTags(src, psgSubnets);
-          const dstTags = getTags(dst, psgSubnets);
-          
-          srcTags.forEach(t => uniqueTags.add(t));
-          dstTags.forEach(t => uniqueTags.add(t));
-          
-          if (!srcTags.length && isValidIP(src)) unmatchedIPs.push(src);
-          if (!dstTags.length && isValidIP(dst)) unmatchedIPs.push(dst);
-          
-          return {
-            ...row,
-            'Source_Tag': srcTags.join(', '),
-            'Destination_Tag': dstTags.join(', ')
-          };
+          const src = String(row[srcKey] || '').trim(), dst = String(row[dstKey] || '').trim();
+          const srcInfo = getMatchInfo(src, psgSubnets), dstInfo = getMatchInfo(dst, psgSubnets);
+          if (srcInfo.tag !== 'Invalid') uniqueTags.add(srcInfo.tag);
+          if (dstInfo.tag !== 'Invalid') uniqueTags.add(dstInfo.tag);
+          if (srcInfo.tag === 'Unmatched') unmatchedIPs.push(src);
+          if (dstInfo.tag === 'Unmatched') unmatchedIPs.push(dst);
+          return { ...row, 'Source_Tag': srcInfo.tag, 'Source_Matched_Subnet': srcInfo.subnet, 'Destination_Tag': dstInfo.tag, 'Destination_Matched_Subnet': dstInfo.subnet };
         });
 
-        summaryData = summarizeIPs(unmatchedIPs);
-
-        document.getElementById('cidr-list').innerHTML = summaryData.cidrs.length 
-          ? summaryData.cidrs.map(c => `<div>${c}</div>`).join('') 
-          : '<div>None</div>';
-        document.getElementById('ip-list').innerHTML = summaryData.individuals.length 
-          ? summaryData.individuals.slice(0, 500).map(i => `<div>${i}</div>`).join('') 
-          : '<div>None</div>';
+        summaryData = summarizeUnmatched(unmatchedIPs);
+        document.getElementById('cidr-summary').innerHTML = summaryData.cidrs.length ? summaryData.cidrs.map(c => `<code>${c}</code>`).join('') : '<div style="color:var(--text-muted)">None</div>';
+        document.getElementById('ip-summary').innerHTML = summaryData.individuals.length ? summaryData.individuals.map(i => `<code>${i}</code>`).join('') : '<div style="color:var(--text-muted)">None</div>';
 
         renderFilters();
         applyFilters();
-        dashboardEl.style.display = 'block';
-        setStatus(`✅ Processed ${paRows.length} rows. Found ${uniqueTags.size} unique tags.`, 'success');
+        dashboardEl.classList.remove('hidden');
+        setStatus(`✅ Done. ${paRows.length} rows processed.`, 'success');
       } catch (err) {
-        setStatus(`❌ Error: ${err.message}`, 'error');
-        console.error('Processing failed:', err);
-      } finally {
-        processBtn.disabled = false;
-      }
+        setStatus(`❌ ${err.message}`, 'error'); console.error(err);
+      } finally { processBtn.disabled = false; }
     });
 
     // === EXPORT ===
     exportBtn.addEventListener('click', () => {
-      if (!processedData.length) return;
-      let csv = Object.keys(processedData[0]).join(',') + '\n';
-      processedData.forEach(row => {
+      if (!currentFilteredData.length) return;
+      let csv = Object.keys(currentFilteredData[0]).join(',') + '\n';
+      currentFilteredData.forEach(row => {
         csv += Object.values(row).map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',') + '\n';
       });
-      csv += '\n--- SUMMARY ---\nCIDR Block\n';
+      csv += '\n--- UNMATCHED SUMMARY ---\nCIDR Block\n';
       summaryData.cidrs.forEach(c => csv += `${c}\n`);
-      csv += '\nIndividual IP\n';
+      csv += '\n--- INDIVIDUAL UNMATCHED ---\nIP\n';
       summaryData.individuals.forEach(i => csv += `${i}\n`);
-
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pa_tagged_log_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const a = document.createElement('a'); a.href = url; a.download = `PA_Traffic_Analyzed_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     });
 
-    clearBtn.addEventListener('click', () => location.reload());
+    // === PAGINATION CONTROLS ===
+    prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); updatePaginationUI(); } });
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(currentFilteredData.length / rowsPerPage);
+      if (currentPage < totalPages) { currentPage++; renderTable(); updatePaginationUI(); }
+    });
+    pageSizeSelect.addEventListener('change', (e) => { rowsPerPage = parseInt(e.target.value, 10); currentPage = 1; renderTable(); updatePaginationUI(); });
+    resetBtn.addEventListener('click', () => location.reload());
   </script>
 </body>
 </html>
